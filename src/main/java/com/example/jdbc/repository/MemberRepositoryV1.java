@@ -3,15 +3,24 @@ package com.example.jdbc.repository;
 import com.example.jdbc.connection.DBConnectionUtil;
 import com.example.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.support.JdbcUtils;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.NoSuchElementException;
 
 /**
- * JDBC - DriverManager 사용
+ * JDBC - DataSource, JdbcUtils
  */
 @Slf4j
 public class MemberRepositoryV1 {
+
+    private final DataSource dataSource;
+
+    public MemberRepositoryV1(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public Member save(Member member) throws SQLException {
         //sql 쿼리 정의
         String sql = "insert into member(member_id, money) values(?, ?)";
@@ -90,26 +99,13 @@ public class MemberRepositoryV1 {
     }
     // Statement -> 완성된 SQL 구문
     private void close(Connection con, Statement stmt, ResultSet rs) {
-        if (rs != null) {
-            try {
-                rs.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            } }
-        if (stmt != null) {
-            try {
-                stmt.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
+        //jdbc utils는 원래의 try catch 구문을 미리 작성해 놓은 것이라 생각하면 됨
+        JdbcUtils.closeResultSet(rs);
+        JdbcUtils.closeStatement(stmt);
+        JdbcUtils.closeConnection(con);
         }
-        if (con != null) {
-            try {
-                con.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        } }
-    private Connection getConnection() {
-        return DBConnectionUtil.getConnection();
+    private Connection getConnection() throws SQLException {
+        Connection con = dataSource.getConnection();
+        log.info("get connection = {}, get class ={}");
+        return con;
     } }
